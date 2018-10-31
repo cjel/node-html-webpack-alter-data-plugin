@@ -18,7 +18,7 @@ HtmlWebpackAlterDataPlugin.prototype.apply = function (compiler) {
 
       if ('chunkFilenameReplacement' in this.options) {
         var html = cheerio.load(data.html, {
-          xmlMode: true,
+          recognizeSelfClosing: true,
         })
         this.options.chunkFilenameReplacement.forEach(function(replacement) {
           var tags = html(replacement.tag)
