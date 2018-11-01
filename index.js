@@ -65,6 +65,7 @@ HtmlWebpackAlterDataPlugin.prototype.apply = function (compiler) {
           recognizeSelfClosing: false,
           lowerCaseTags: false,
           lowerCaseAttributeNames: false,
+          decodeEntities: false,
         })
         co = processHtml(co, compilation)
         co('script').each(function(i, elem) {
@@ -75,6 +76,7 @@ HtmlWebpackAlterDataPlugin.prototype.apply = function (compiler) {
             recognizeSelfClosing: false,
             lowerCaseTags: false,
             lowerCaseAttributeNames: false,
+            decodeEntities: false,
           })
           var scriptResult = processHtml(script, compilation).html()
           console.log(scriptResult)
