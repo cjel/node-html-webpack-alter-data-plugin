@@ -15,8 +15,6 @@ HtmlWebpackAlterDataPlugin.prototype.apply = function (compiler) {
 
   function processHtml(co, compilation) {
     self.options.chunkFilenameReplacement.forEach(function(replacement) {
-      console.log('='.repeat(30))
-      console.log(replacement.tag)
       co(replacement.tag).each(function(i, elem) {
         var tag = co(elem)[0]
         if ( (!tag)
@@ -79,7 +77,6 @@ HtmlWebpackAlterDataPlugin.prototype.apply = function (compiler) {
             decodeEntities: false,
           })
           var scriptResult = processHtml(script, compilation).html()
-          console.log(scriptResult)
           co(co('script').get(i)).html(scriptResult)
         })
         data.html = co.html()
