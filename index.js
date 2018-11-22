@@ -59,6 +59,7 @@ HtmlWebpackAlterDataPlugin.prototype.apply = function (compiler) {
     compilation.hooks.htmlWebpackPluginAfterHtmlProcessing.tapAsync('HtmlWebpackAlterDataPlugin', (data, cb) => {
 
       if ('chunkFilenameReplacement' in this.options) {
+        console.log(data.html)
         var co = cheerio.load(data.html, {
           recognizeSelfClosing: false,
           lowerCaseTags: false,
@@ -82,6 +83,8 @@ HtmlWebpackAlterDataPlugin.prototype.apply = function (compiler) {
         data.html = co.html()
       }
       data.html = data.html.replace('<!DOCTYPE html5>', '<!DOCTYPE html>')
+      data.html = data.html.replace(/<!--\|\%\|/g, '')
+      data.html = data.html.replace(/\|\%\|-->/g, '')
       cb(null, data)
     })
 
