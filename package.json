@@ -9,6 +9,7 @@
   "author": "Philipp Dieter <philipp@glanzstueck.agency>",
   "license": "ISC",
   "dependencies": {
-    "cheerio": "^0.22.0"
+    "cheerio": "^0.22.0",
+    "mkdirp": "^0.5.1"
   }
 }

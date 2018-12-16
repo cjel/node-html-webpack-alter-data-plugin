@@ -1,4 +1,7 @@
 const cheerio  = require('cheerio')
+var mkdirp = require('mkdirp');
+var fs = require('fs');
+var path = require('path');
 
 function HtmlWebpackAlterDataPlugin (options) {
   this.options = {
@@ -112,6 +115,23 @@ HtmlWebpackAlterDataPlugin.prototype.apply = function (compiler) {
         return fileContent.length;
       }
     };
+
+    var fullPath = path.resolve(this.outputPath || compilation.compiler.outputPath, this.options.assetsConstants);
+    var directory = path.dirname(fullPath);
+
+    mkdirp(directory, function (err) {
+        if (err) {
+          //return callback(err);
+        }
+        // Write to disk
+        fs.writeFile(fullPath, fileContent, function (err) {
+          if (err) {
+            //return callback(err);
+          }
+        //callback(null);
+      });
+    });
+
   })
 
 };
