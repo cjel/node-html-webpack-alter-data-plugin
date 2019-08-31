@@ -1,7 +1,7 @@
-const cheerio  = require('cheerio')
-var mkdirp = require('mkdirp');
-var fs = require('fs');
-var path = require('path');
+var fs         = require('fs');
+var mkdirp     = require('mkdirp');
+var path       = require('path');
+var RawSource  = require("webpack-sources/lib/RawSource");
 
 function HtmlWebpackAlterDataPlugin (options) {
   this.options = {
@@ -14,99 +14,54 @@ function HtmlWebpackAlterDataPlugin (options) {
 }
 
 HtmlWebpackAlterDataPlugin.prototype.apply = function (compiler) {
-  var self = this
+  var self = this;
 
-  function processHtml(co, compilation) {
+  compiler.hooks.emit.tapAsync('HtmlWebpackAlterDataPlugin', (compilation, callback) => {
+    var filenameHashed = null;
     self.options.chunkFilenameReplacement.forEach(function(replacement) {
-      co(replacement.tag).each(function(i, elem) {
-        var tag = co(elem)[0]
-        if ( (!tag)
-          || (!('attribs' in tag))
-          || (!(replacement.attribute in tag.attribs))
-        ) {
+      compilation.chunks.forEach(function(chunk) {
+        if (chunk.name != 'spritemap') {
           return
         }
-        var url = tag.attribs[replacement.attribute]
-        if (url[0] != '~') {
-          return
-        }
-        url = url.substring(1)
-        var hash = url.slice(url.indexOf('#'))
-        var path = url.slice(0, url.indexOf('#'))
-        var file = path.slice(url.lastIndexOf('/') + 1)
-        var path = path.slice(0, url.lastIndexOf('/') + 1)
-        var filename = file.slice(0, file.indexOf('.'))
-        var extension = file.slice(file.indexOf('.') + 1)
-        compilation.chunks.forEach(function(chunk) {
-          if (chunk.name != filename) {
-            return
-          }
-          chunk.files.forEach(function(file) {
-            if (!file.startsWith(path)) {
-              return
-            }
-            if (!file.endsWith('.' + extension)) {
-              return
-            }
-            tag.attribs[replacement.attribute] = '/' + file + hash
-          })
-        })
-
-      })
-    })
-    return co
-  }
+        filenameHashed = '/assets/spritemap.' + chunk.renderedHash + '.svg';
+      });
+    });
+    if (filenameHashed) {
+      for (var basename in compilation.assets) {
+        var result = compilation.assets[basename].source();
+        var regexp = /<use xlink:href="~assets\/spritemap\.svg#([a-zA-Z-]*)">/g;
+        var replacement = '<use xlink:href="' + filenameHashed + '#$1">';
+        var result = result.replace(regexp, replacement);
+        var regexp = /<use xlink:href=\\"~assets\/spritemap\.svg#([a-zA-Z-]*)\\">/g;
+        var replacement = '<use xlink:href=\\"' + filenameHashed + '#$1\\">';
+        var result = result.replace(regexp, replacement);
+        compilation.assets[basename] = new RawSource(result);
+      }
+    }
+    callback();
+  });
 
   compiler.hooks.compilation.tap('HtmlWebpackAlterDataPlugin', (compilation) => {
-
     compilation.hooks.htmlWebpackPluginAfterHtmlProcessing.tapAsync('HtmlWebpackAlterDataPlugin', (data, cb) => {
-
-      if ('chunkFilenameReplacement' in this.options) {
-        var co = cheerio.load(data.html, {
-          recognizeSelfClosing: false,
-          lowerCaseTags: false,
-          lowerCaseAttributeNames: false,
-          decodeEntities: false,
-        })
-        co = processHtml(co, compilation)
-        co('script').each(function(i, elem) {
-          if (co(elem).attr('type') != 'text/x-template') {
-            return;
-          }
-          var script = cheerio.load(co(elem).html(), {
-            recognizeSelfClosing: false,
-            lowerCaseTags: false,
-            lowerCaseAttributeNames: false,
-            decodeEntities: false,
-          })
-          var scriptResult = processHtml(script, compilation).html()
-          co(co('script').get(i)).html(scriptResult)
-        })
-        data.html = co.html()
-      }
-      data.html = data.html.replace('<!DOCTYPE html5>', '<!DOCTYPE html>')
-      data.html = data.html.replace(/<!--\|\%\|/g, '')
-      data.html = data.html.replace(/\|\%\|-->/g, '')
+      data.html = data.html.replace('<!DOCTYPE html5>', '<!DOCTYPE html>');
+      data.html = data.html.replace(/<!--\|\%\|/g, '');
+      data.html = data.html.replace(/\|\%\|-->/g, '');
       cb(null, data)
-    })
-
-  })
+    });
+  });
 
   compiler.hooks.emit.tap('HtmlWebpackAlterDataPlugin', (compilation) => {
-
     if (!this.options.assetsConstants) {
-      return
+      return;
     }
-
     fileContent = ''
     compilation.chunks.forEach(function(chunk) {
       chunk.files.forEach(function(file) {
-        var extension = file.slice(file.lastIndexOf('.') + 1)
-        line = 'asset.' + extension + '.' + chunk.name + ' = ' + '/' + file + '\n'
-        fileContent += line
-      })
-    })
-
+        var extension = file.slice(file.lastIndexOf('.') + 1);
+        line = 'asset.' + extension + '.' + chunk.name + ' = ' + '/' + file + '\n';
+        fileContent += line;
+      });
+    });
     compilation.assets[this.options.assetsConstants] = {
       source: function() {
         return fileContent;
@@ -115,24 +70,12 @@ HtmlWebpackAlterDataPlugin.prototype.apply = function (compiler) {
         return fileContent.length;
       }
     };
-
     var fullPath = path.resolve(this.outputPath || compilation.compiler.outputPath, this.options.assetsConstants);
     var directory = path.dirname(fullPath);
-
     mkdirp(directory, function (err) {
-        if (err) {
-          //return callback(err);
-        }
-        // Write to disk
-        fs.writeFile(fullPath, fileContent, function (err) {
-          if (err) {
-            //return callback(err);
-          }
-        //callback(null);
-      });
+      fs.writeFile(fullPath, fileContent, function (err) {});
     });
-
-  })
+  });
 
 };
 
