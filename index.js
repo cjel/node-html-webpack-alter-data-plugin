@@ -29,13 +29,15 @@ HtmlWebpackAlterDataPlugin.prototype.apply = function (compiler) {
     if (filenameHashed) {
       for (var basename in compilation.assets) {
         var result = compilation.assets[basename].source();
-        var regexp = /<use xlink:href="~assets\/spritemap\.svg#([a-zA-Z-]*)">/g;
-        var replacement = '<use xlink:href="' + filenameHashed + '#$1">';
-        var result = result.replace(regexp, replacement);
-        var regexp = /<use xlink:href=\\"~assets\/spritemap\.svg#([a-zA-Z-]*)\\">/g;
-        var replacement = '<use xlink:href=\\"' + filenameHashed + '#$1\\">';
-        var result = result.replace(regexp, replacement);
-        compilation.assets[basename] = new RawSource(result);
+        if (typeof result == 'string') {
+          var regexp = /<use xlink:href="~assets\/spritemap\.svg#([a-zA-Z-]*)">/g;
+          var replacement = '<use xlink:href="' + filenameHashed + '#$1">';
+          var result = result.replace(regexp, replacement);
+          var regexp = /<use xlink:href=\\"~assets\/spritemap\.svg#([a-zA-Z-]*)\\">/g;
+          var replacement = '<use xlink:href=\\"' + filenameHashed + '#$1\\">';
+          var result = result.replace(regexp, replacement);
+          compilation.assets[basename] = new RawSource(result);
+        }
       }
     }
     callback();
