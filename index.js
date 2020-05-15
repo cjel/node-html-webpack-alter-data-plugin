@@ -3,6 +3,8 @@ var mkdirp     = require('mkdirp');
 var path       = require('path');
 var RawSource  = require("webpack-sources/lib/RawSource");
 
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+
 function HtmlWebpackAlterDataPlugin (options) {
   this.options = {
     assetsConstants: false,
@@ -44,7 +46,9 @@ HtmlWebpackAlterDataPlugin.prototype.apply = function (compiler) {
   });
 
   compiler.hooks.compilation.tap('HtmlWebpackAlterDataPlugin', (compilation) => {
-    compilation.hooks.htmlWebpackPluginAfterHtmlProcessing.tapAsync('HtmlWebpackAlterDataPlugin', (data, cb) => {
+    const beforeEmit = compilation.hooks.htmlWebpackPluginAfterHtmlProcessing ||
+      HtmlWebpackPlugin.getHooks(compilation).beforeEmit;
+    beforeEmit.tapAsync('HtmlWebpackAlterDataPlugin', (data, cb) => {
       data.html = data.html.replace('<!DOCTYPE html5>', '<!DOCTYPE html>');
       data.html = data.html.replace(/<!--\|\%\|/g, '');
       data.html = data.html.replace(/\|\%\|-->/g, '');
