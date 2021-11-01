@@ -2,44 +2,53 @@ var fs         = require('fs');
 var mkdirp     = require('mkdirp');
 var path       = require('path');
 var RawSource  = require("webpack-sources/lib/RawSource");
+var parse      = require('node-html-parser').default;
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 function HtmlWebpackAlterDataPlugin (options) {
   this.options = {
-    assetsConstants: false,
-    debug: false,
-    chunkFilenameReplacement: []
+    assetsConstants:          false,
+    assetPrefix:              '~',
+    manifestFilename:         'manifest.json',
+    debug:                    false,
+    chunkFilenameReplacement: [],
   }
-
   options && Object.assign(this.options, options);
 }
 
 HtmlWebpackAlterDataPlugin.prototype.apply = function (compiler) {
   var self = this;
-
   compiler.hooks.emit.tapAsync('HtmlWebpackAlterDataPlugin', (compilation, callback) => {
-    var filenameHashed = null;
-    self.options.chunkFilenameReplacement.forEach(function(replacement) {
-      compilation.chunks.forEach(function(chunk) {
-        if (chunk.name != 'spritemap') {
-          return
+    var manifest = JSON.parse(
+      compilation.assets[this.options.manifestFilename]._value
+    );
+    //callback();
+    //return;
+    for (var basename in compilation.assets) {
+      var result = compilation.assets[basename].source();
+      if (typeof result == 'string') {
+        var root = parse(result);
+        var nodes = root.querySelectorAll('svg use');
+        if (!nodes) {
+          continue;
         }
-        filenameHashed = '/assets/spritemap.' + chunk.renderedHash + '.svg';
-      });
-    });
-    if (filenameHashed) {
-      for (var basename in compilation.assets) {
-        var result = compilation.assets[basename].source();
-        if (typeof result == 'string') {
-          var regexp = /<use xlink:href="~assets\/spritemap\.svg#([a-zA-Z-]*)">/g;
-          var replacement = '<use xlink:href="' + filenameHashed + '#$1">';
-          var result = result.replace(regexp, replacement);
-          var regexp = /<use xlink:href=\\"~assets\/spritemap\.svg#([a-zA-Z-]*)\\">/g;
-          var replacement = '<use xlink:href=\\"' + filenameHashed + '#$1\\">';
-          var result = result.replace(regexp, replacement);
-          compilation.assets[basename] = new RawSource(result);
+        for (var i = 0; i < nodes.length; i++) {
+          var node = nodes[i];
+          var attribute = node.getAttribute('xlink:href');
+          if (!attribute) {
+            continue;
+          }
+          for (var [source, target] of Object.entries(manifest)) {
+            attribute = attribute.replace(
+              this.options.assetPrefix + source + '#',
+              target + '#',
+            )
+          }
+          node.setAttribute('xlink:href', attribute);
         }
+        var result = root.toString();
+        compilation.assets[basename] = new RawSource(result);
       }
     }
     callback();

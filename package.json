@@ -9,7 +9,9 @@
   "author": "Philipp Dieter <philipp@glanzstueck.agency>",
   "license": "ISC",
   "dependencies": {
+    "html-webpack-plugin": "^5.4.0",
     "mkdirp": "^0.5.1",
+    "node-html-parser": "^5.0.0",
     "webpack-sources": "^1.4.3"
   }
 }
