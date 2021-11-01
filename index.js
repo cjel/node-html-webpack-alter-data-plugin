@@ -39,15 +39,17 @@ HtmlWebpackAlterDataPlugin.prototype.apply = function (compiler) {
           if (!attribute) {
             continue;
           }
+          var attributeReplace = attribute;
           for (var [source, target] of Object.entries(manifest)) {
-            attribute = attribute.replace(
+            attributeReplace = attributeReplace.replace(
               this.options.assetPrefix + source + '#',
               target + '#',
             )
           }
-          node.setAttribute('xlink:href', attribute);
+          // Just use replace as using html pasrser to set attribute breaks the
+          // js module escaping
+          result = result.replace(attribute, attributeReplace);
         }
-        var result = root.toString();
         compilation.assets[basename] = new RawSource(result);
       }
     }
