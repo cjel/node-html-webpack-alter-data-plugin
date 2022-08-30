@@ -63,8 +63,8 @@ HtmlWebpackAlterDataPlugin.prototype.apply = function (compiler) {
       data.html = data.html.replace('<!DOCTYPE html5>', '<!DOCTYPE html>');
       data.html = data.html.replace(/<!--\|\%\|/g, '');
       data.html = data.html.replace(/\|\%\|-->/g, '');
-      data.html = data.html.replace(/\%\{\{/g, '&#123;&#123;');
-      data.html = data.html.replace(/\}\}\%/g, '&#125;&#125;');
+      data.html = data.html.replace(/\\\{/g, '{c:cbo()}');
+      data.html = data.html.replace(/\\\}/g, '{c:cbc()}');
       cb(null, data)
     });
   });
