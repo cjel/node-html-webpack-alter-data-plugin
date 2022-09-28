@@ -23,32 +23,14 @@ HtmlWebpackAlterDataPlugin.prototype.apply = function (compiler) {
     var manifest = JSON.parse(
       compilation.assets[this.options.manifestFilename]._value
     );
-    //callback();
-    //return;
     for (var basename in compilation.assets) {
       var result = compilation.assets[basename].source();
       if (typeof result == 'string') {
-        var root = parse(result);
-        var nodes = root.querySelectorAll('svg use');
-        if (!nodes) {
-          continue;
-        }
-        for (var i = 0; i < nodes.length; i++) {
-          var node = nodes[i];
-          var attribute = node.getAttribute('xlink:href');
-          if (!attribute) {
-            continue;
-          }
-          var attributeReplace = attribute;
-          for (var [source, target] of Object.entries(manifest)) {
-            attributeReplace = attributeReplace.replace(
-              this.options.assetPrefix + source + '#',
-              target + '#',
-            )
-          }
-          // Just use replace as using html pasrser to set attribute breaks the
-          // js module escaping
-          result = result.replace(attribute, attributeReplace);
+        for (var [source, target] of Object.entries(manifest)) {
+          result = result.replace(
+            new RegExp(this.options.assetPrefix + source + '#', 'g'),
+            target + '#',
+          )
         }
         compilation.assets[basename] = new RawSource(result);
       }
